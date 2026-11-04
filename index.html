@@ -94,6 +94,7 @@
   <nav>
     <strong>Contents</strong>
     <ol>
+      <li><a href="#flow">Setup and testing</a></li>
       <li><a href="#where">Where the tab goes</a></li>
       <li><a href="#look">What the tab looks like</a></li>
       <li><a href="#history">History</a></li>
@@ -108,6 +109,33 @@
       <li><a href="#test">What to test</a></li>
     </ol>
   </nav>
+
+  <h2 id="flow">How the team sets up and tests a webinar</h2>
+  <p>The Backend tab follows this sequence. A Pulse calendar item is the trigger. The same steps apply to Guest Host Live Webinar. The only difference is which Zoom account hosts the webinar.</p>
+  <h3>Webinar setup</h3>
+  <ol>
+    <li>Pulse calendar item. This is the trigger.</li>
+    <li>Create the Zoom webinar in the <code>support@subto.com</code> account.</li>
+    <li>Create the ActiveCampaign tag.</li>
+    <li>Create the ActiveCampaign form. Manual for now.</li>
+    <li>Set up SMS reminders.</li>
+    <li>Embed the new ActiveCampaign form on the landing page. Manual for now.</li>
+  </ol>
+  <h3>Webinar testing</h3>
+  <p>Someone fills out the form on the landing page. That step is manual for now. Test Lead Intake then checks the rest, and Notes records each result.</p>
+  <ol>
+    <li>Close: the lead has an <code>01. New Activity</code>. The <code>Funnel?</code> field must read <code>Live Webinar - MM/DD/YYYY</code>. That date must match the date on the landing page and the date of the webinar in Pulse.</li>
+    <li>ActiveCampaign: the date on the tag must match the landing-page date, the Pulse webinar date, and the date in <code>Funnel?</code>.</li>
+    <li>Zoom: the test lead is registered on the webinar.</li>
+    <li>SMS: the lead is on the SMS reminders list. That list is the <code>SMS Verified</code> tab of the webinar’s sheet.</li>
+  </ol>
+  <h3>Guest Host Live Webinar</h3>
+  <p>Same setup and the same tests. The Zoom host changes by brand:</p>
+  <ul>
+    <li>Subto guest: <code>pace@subto.com</code></li>
+    <li>Gator guest: <code>support@gatormethod.com</code></li>
+  </ul>
+  <p>A Live Webinar, Replay Webinar, or Ask Me Anything still uses <code>support@subto.com</code> unless the card says otherwise. When the test looks up the registrant, it uses the host on the Pulse item, and Notes names that account.</p>
 
   <h2 id="where">Where the tab goes</h2>
   <p>The event dialog already has Details, Integrations, Zoom settings (only for a Zoom event type), SMS copy (only when <code>confirmSms</code> or <code>reminders</code> is on), RSVP, and History. Add <strong>Backend</strong> as the last tab. Do not rename or remove the tabs above it. Leave the existing “n8n pending” line and the sentence “Changes are recorded in the History tab.”</p>
@@ -222,7 +250,8 @@ Zoom: no row on the registrant sheet the SMS workflow uses, and not among the ne
   <p>Look up the sheet by the <code>email</code> column and the <code>phone</code> column. Try the phone as stored and as E.164. Search the whole column. An empty lookup is a miss, not an error.</p>
 
   <h2 id="zoom">Zoom</h2>
-  <p>Extract the mailbox from <code>zoomAccount</code>. The sample value is <code>Support@subto.com - Webinars (Unlimited)</code>. The email is the part before <code> - </code>. Zoom <code>GET /webinars/{id}/registrants</code> ignores an <code>email</code> query and returns the newest page only. Do not page thousands of registrants from Pulse.</p>
+  <p>Extract the mailbox from <code>zoomAccount</code>. The sample value is <code>Support@subto.com - Webinars (Unlimited)</code>. The email is the part before <code> - </code>. Live, Replay, and Ask Me Anything webinars are created under <code>support@subto.com</code>. Guest Host Live Webinar uses <code>pace@subto.com</code> for Subto and <code>support@gatormethod.com</code> for Gator. Notes names the account that was searched. Zoom <code>GET /webinars/{id}/registrants</code> ignores an <code>email</code> query and returns the newest page only. Do not page thousands of registrants from Pulse.</p>
+  <p>A pass on Zoom means the test email is a registrant. A pass on Close means <code>Funnel?</code> is <code>Live Webinar - MM/DD/YYYY</code> and that date matches the Pulse webinar date and the landing-page date. A pass on ActiveCampaign means the date in the tag matches those same three dates.</p>
   <p>Decide the join URL in this order:</p>
   <ol>
     <li><code>join_url</code> on the All Registrants or SMS Verified row for this email.</li>
