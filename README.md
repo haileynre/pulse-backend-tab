@@ -1,2 +1,5 @@
-# pulse-backend-tab
-Spec for the NR Pulse Backend tab: setup checklist and read-only webinar lead test.
+# Pulse Backend tab
+
+Public spec for the New Reach team.
+
+Read the page: https://haileynre.github.io/pulse-backend-tab/
