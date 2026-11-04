@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Backend tab</title>
+<style>
+  :root {
+    --ink: #1c1915;
+    --muted: #5c564c;
+    --line: #e4ddd2;
+    --paper: #faf7f2;
+    --card: #fff;
+    --accent: #1f6b45;
+    --accent-soft: #e7f3ec;
+    --warn: #8a4b12;
+    --warn-soft: #fbf1e4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 17px/1.55 "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  }
+  header {
+    background: #14261c;
+    color: #f4f1ea;
+    padding: 2.5rem 1.25rem 2rem;
+  }
+  header .wrap, main { max-width: 46rem; margin: 0 auto; }
+  header p { margin: 0.4rem 0 0; color: #c9d5cc; }
+  h1 { font-size: 2.1rem; line-height: 1.15; margin: 0; font-weight: 650; }
+  h2 { font-size: 1.45rem; margin: 2.4rem 0 0.6rem; }
+  h3 { font-size: 1.12rem; margin: 1.6rem 0 0.4rem; }
+  a { color: var(--accent); }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; }
+  p, li { color: var(--ink); }
+  .lede { font-size: 1.12rem; }
+  main { padding: 1.5rem 1.25rem 4rem; }
+  nav {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    margin: 1.2rem 0 0.4rem;
+  }
+  nav ol { margin: 0.3rem 0 0; padding-left: 1.2rem; }
+  nav a { text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  ul, ol { padding-left: 1.2rem; }
+  li { margin: 0.28rem 0; }
+  .callout {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .warn {
+    background: var(--warn-soft);
+    border-left: 4px solid var(--warn);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-radius: 0 8px 8px 0;
+  }
+  pre {
+    background: #1c1915;
+    color: #f4f1ea;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    border-radius: 8px;
+    line-height: 1.45;
+    font-size: 0.82rem;
+  }
+  pre code { color: inherit; font-size: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1.2rem; font-size: 0.95rem; }
+  th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); padding: 0.45rem 0.5rem 0.45rem 0; }
+  th { color: var(--muted); font-weight: 650; font-size: 0.8rem; letter-spacing: 0.02em; }
+  footer { color: var(--muted); font-size: 0.9rem; margin-top: 2.5rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Pulse Backend tab</h1>
+    <p>Spec for Matt’s Cursor. Build this in the New Reach HQ app. Nov 4, 2026.</p>
+  </div>
+</header>
+<main>
+  <p class="lede">Add a Backend tab on NR Pulse webinar events. The tab tracks setup checkboxes in the existing History log. Test Lead Intake looks up a registrant the same way a live Nov 4 check did, then writes that diagnosis into Notes.</p>
+  <p>The app is <a href="https://finance.newreach.com/nr-pulse">finance.newreach.com/nr-pulse</a>. It is a Next.js page at <code>app/(dashboard)/nr-pulse</code>, backed by a tRPC router named <code>nrPulse</code>. This spec does not live in that repo.</p>
+
+  <nav>
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#where">Where the tab goes</a></li>
+      <li><a href="#look">What the tab looks like</a></li>
+      <li><a href="#history">History</a></li>
+      <li><a href="#storage">Checklist storage</a></li>
+      <li><a href="#intake">Test Lead Intake</a></li>
+      <li><a href="#path">The live n8n path</a></li>
+      <li><a href="#notes">Notes</a></li>
+      <li><a href="#sheet">Registry and the sheet</a></li>
+      <li><a href="#zoom">Zoom</a></li>
+      <li><a href="#ac">ActiveCampaign</a></li>
+      <li><a href="#close">Close</a></li>
+      <li><a href="#test">What to test</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="where">Where the tab goes</h2>
+  <p>The event dialog already has Details, Integrations, Zoom settings (only for a Zoom event type), SMS copy (only when <code>confirmSms</code> or <code>reminders</code> is on), RSVP, and History. Add <strong>Backend</strong> as the last tab. Do not rename or remove the tabs above it. Leave the existing “n8n pending” line and the sentence “Changes are recorded in the History tab.”</p>
+  <p>Show the tab when either is true:</p>
+  <ul>
+    <li><code>mechanismCode</code> is <code>live</code> (LIVE Webinar), <code>likelike</code> (Replay Webinar), or <code>ama</code> (Ask Me Anything).</li>
+    <li>The mechanism label, compared case-insensitively after trimming, is <code>pace live webinar</code> or <code>guest host live webinar</code>.</li>
+  </ul>
+  <p>Those last two mechanisms are not in <code>nrPulse.mechanisms</code> today. Do not create them. The label check is what makes the tab appear after someone adds them. When their codes exist, add the codes too, so a later rename does not hide the tab.</p>
+  <p>Current mechanisms: <code>live</code>, <code>likelike</code>, <code>challenge</code>, <code>ama</code>, <code>inperson</code>, <code>internal</code>, <code>conversion_sprint</code>. Hide the tab for the four not listed above.</p>
+
+  <h2 id="look">What the tab looks like</h2>
+  <p>Match the open event dialog. The rough mock is layout only.</p>
+  <h3>Platform Setup</h3>
+  <p>Nine rows. Each row is a checkbox, the label, and on the right the completion stamp. The stamp is empty while unchecked. When checked, format the timestamp with the same formatter the History tab already uses for <code>changedAt</code>, then the actor: the logged-in user’s email, or <code>n8n</code> when no user checked it. Example: <span class="mono">Oct 8, 2026, 9:56 AM · n8n</span>.</p>
+  <table>
+    <thead><tr><th>Key</th><th>Label</th></tr></thead>
+    <tbody>
+      <tr><td><code>zoom_webinar</code></td><td>Created Zoom Webinar</td></tr>
+      <tr><td><code>ac_form</code></td><td>Active Campaign Form</td></tr>
+      <tr><td><code>ac_tags</code></td><td>Active Campaign Tag(s)</td></tr>
+      <tr><td><code>landing_page</code></td><td>Updated Landing Page</td></tr>
+      <tr><td><code>ac_form_lp_main</code></td><td>AC Form Embedded on LP (Main)</td></tr>
+      <tr><td><code>ac_form_lp_email</code></td><td>AC Form Embedded on LP (Email)</td></tr>
+      <tr><td><code>sms_copy</code></td><td>Copy for SMS Reminders</td></tr>
+      <tr><td><code>sms_automation</code></td><td>SMS Automation Setup Completed</td></tr>
+      <tr><td><code>webinar_automation</code></td><td>Webinar Automation Setup Completed</td></tr>
+    </tbody>
+  </table>
+  <p>Checking and unchecking both save immediately. They do not wait for the dialog Save button, and Discard does not undo them. A person can uncheck a box n8n checked.</p>
+
+  <h3>Platform Check</h3>
+  <p>A field labeled Submit Test Lead Email, and a button labeled Test Lead Intake. Disable the button until the value is an email. The button does not register anyone and does not write to Close, ActiveCampaign, Zoom, the registry, or the sheet.</p>
+  <ul>
+    <li>Close Account, full width, with a link affordance when the value is a URL.</li>
+    <li>Close Custom Activity “Funnel?” Field, and Lead Owner.</li>
+    <li>Initial Lead Type, and Last Lead Type.</li>
+    <li>Initial Lead Source, and Last Lead Source.</li>
+    <li>Active Campaign Account, full width, link affordance when it is a URL.</li>
+    <li>Webinar Tag (Main), and Webinar Tag (Email).</li>
+    <li>Member Communications: Zoom Join URL, and SMS Reminders. SMS Reminders is the reminder body only when this phone is on the SMS Verified tab. Otherwise it stays empty and Notes explains the sheet.</li>
+    <li>Notes, full width. This is the diagnosis. The required wording is in <a href="#notes">Notes</a>.</li>
+  </ul>
+  <p>These inputs stay editable after a lookup so someone can correct a value. Hand edits use the dialog’s existing dirty/save path. Each hand-edited field writes one History row the same way other event fields already do.</p>
+
+  <h2 id="history">History</h2>
+  <p>The History tab already lists <code>nrPulse.changes</code>: summary, then <code>changedByEmail</code> (or <code>changedByLegacy</code>) when present, then <code>changedAt</code>. n8n rows have a null email and summaries such as “Zoom link added by n8n”. Reuse that table. Do not build a second log.</p>
+  <p>Write one row per checkbox toggle:</p>
+  <ul>
+    <li><code>field</code>: <code>backend.zoom_webinar</code> (and the other keys)</li>
+    <li><code>oldValue</code> / <code>newValue</code>: <code>unchecked</code> or <code>checked</code></li>
+    <li><code>summary</code>: “Created Zoom Webinar checked” or “Created Zoom Webinar unchecked”. For an n8n check, put “by n8n” in the summary, because a null email is omitted by the History UI.</li>
+    <li><code>changedByEmail</code>: the session user from <code>nrPulse.me</code>, or null for n8n</li>
+  </ul>
+  <p>Write one row for each Test Lead Intake run, not one row per filled field. <code>field</code> is <code>backend.testLead</code>. <code>summary</code> is “Test lead intake for &lt;email&gt;”. <code>newValue</code> is the Notes text. <code>changedByEmail</code> is the session user. Unchecking does not delete older rows.</p>
+
+  <h2 id="storage">Checklist storage</h2>
+  <p>New table, one row per event plus item key: <code>checked</code>, <code>completedAt</code>, <code>completedByEmail</code> (null for n8n), <code>source</code> (<code>user</code> or <code>n8n</code>). Store the last Platform Check snapshot on the event: the email, every field above, and Notes.</p>
+  <p><strong>Seed once, the first time the tab loads, and do not write a new History row when the original n8n History row already exists.</strong></p>
+  <ul>
+    <li>Created Zoom Webinar: checked when <code>zoomWebinarId</code> is set. Stamp time comes from the History row whose summary is “Zoom link added by n8n”. If that row is missing, use the event time the link was stored and write one History row.</li>
+    <li>Active Campaign Tag(s): checked only when <code>acTag</code> is non-empty. A blank <code>acTag</code> stays unchecked.</li>
+    <li>Do not auto-check the other seven from a filled landing page, SMS copy, or any other field a person typed.</li>
+  </ul>
+  <p>The existing n8n callback that already writes <code>zoomWebinarId</code>, <code>zoomLink</code>, <code>registrationLink</code>, and <code>acTag</code> onto the card should call the same mark function. Mark <code>zoom_webinar</code> when the callback sets a webinar id. Mark <code>ac_tags</code> when it sets <code>acTag</code>. No change to workflow <code>322e</code> (<code>RldCoGPgDE3VUEGJ</code>) or <code>322s</code> (<code>SYo2K0IASwWVSAdH</code>) is required for those two boxes.</p>
+  <p>Last write wins. A newer n8n completion may re-check a box a person had unchecked. Replaying the same completion (a <code>completedAt</code> that is not newer) must not re-check it. Later setup steps check their box only by calling this mark function with <code>source: "n8n"</code>. Do not invent those signals. <code>322t</code> (AC form clone) is a draft and is not a source.</p>
+
+  <h2 id="intake">Test Lead Intake</h2>
+  <p>Authenticated tRPC mutation. The browser never calls n8n, Close, ActiveCampaign, Zoom, or Google Sheets directly. If the Pulse server already has those clients, call them there. If <code>martech.scheduled_events</code>, <code>martech.webinar_registrants</code>, and <code>public.webinar_actions_for</code> are only reachable from n8n, add one read-only n8n workflow and call it server-side with a shared secret. Leave that workflow inactive until this mutation is ready to call it. Do not pause any Zap, do not set <code>cutover</code>, and do not activate unrelated workflows.</p>
+  <p>This lookup was proven on Nov 4, 2026 against Creative Finance Training with Pace Morby (Zoom webinar <code>85977280124</code>, 3:00 PM Arizona) for <code>hailey@newreach.com</code>. Build the mutation so it walks the same objects. Do not invent a second recipient list.</p>
+
+  <h2 id="path">The live n8n path</h2>
+  <p>Reminder texts have not moved off Google Sheets. <code>324a. Webinar Touchpoint → Prep for SMS Send</code> (<code>jy8RObFP3AQYVvJ8</code>, active) reads <code>spreadsheet_url</code> from <code>martech.scheduled_events</code> (Postgres credential <code>Postgres martech (RDS)</code>, <code>cw384TD0mH9zl9e6</code>) and then the worksheet named <code>SMS Verified</code>. The Google Sheets credential on that node is <code>Google Sheets (webadmin@newreach.com)</code>, <code>KSTD7YyeDQoLwCgE</code>. For the Nov 4 webinar that URL is:</p>
+  <p><a href="https://docs.google.com/spreadsheets/d/16pn1wabazyoSZz0gozs6ybWV7Y-ddVo_mhdAjlD6Fdc/edit">docs.google.com/spreadsheets/d/16pn1wabazyoSZz0gozs6ybWV7Y-ddVo_mhdAjlD6Fdc</a></p>
+  <p>Tabs: <code>All Registrants</code> (<code>479007362</code>), <code>SMS Verified</code> (<code>907378576</code>). Columns on both, in order: <code>registered_at</code>, <code>fname</code>, <code>lname</code>, <code>phone</code>, <code>email</code>, <code>join_url</code>, <code>lead_id</code>, <code>rep</code>. All Registrants also has <code>sms_verified</code>. <code>324a</code> sends only rows on SMS Verified. It stops a live send when <code>public.webinar_actions_for(webinar_id, brand, type)</code> does not return <code>reminders = true</code> (<code>why = reminders_off</code>). Dry runs still preview. <code>324b. Twilio SMS Bulk Sender</code> (<code>0a9hIFXiA3e6Qn7L</code>) is the sender. <code>322b. Webinar Scheduler</code> (<code>DJedqUZpPXGz2nCO</code>) is what calls <code>324a</code>.</p>
+  <p><code>323a. Webinar Registration Hub</code> (<code>PrVf9V1N7cyYZwUb</code>, active) is the registration path. It loads the same registry row and the same switches. On Nov 4, during live registrations, <code>reminders</code> was false and <code>blocked_by.reminders</code> was <code>global</code>, and <code>confirm_sms</code> was false and <code>blocked_by.confirm_sms</code> was <code>webinar</code>. Those hub runs did not execute a Google Sheets node, so they did not add the phone to either tab. A tag already on the contact does not mean the phone is on the sheet.</p>
+  <p><code>martech.webinar_registrants</code> is the claim table (<code>webinar_id</code>, <code>email</code>, <code>phone</code>, <code>join_link</code>, <code>source</code>, <code>sheet_logged_at</code>). One row per webinar plus email. Read it. Do not insert.</p>
+
+  <h2 id="notes">Notes</h2>
+  <p>Notes is the diagnosis, not a one-line miss list. Every run replaces the system portion of Notes with plain sentences a teammate can read without opening n8n. Keep any text the person typed under a <code>Team notes:</code> heading. No stack traces. A thrown error is one sentence: <span class="mono">Close: error — &lt;short message&gt;</span>. The other lookups still run.</p>
+  <p>Write these blocks, in this order, and skip a block only when that system was not queried:</p>
+  <ol>
+    <li>One line: <span class="mono">Test lead intake · &lt;timestamp in the event timezone&gt; · &lt;session email&gt;</span>.</li>
+    <li>The sheet URL from <code>scheduled_events.spreadsheet_url</code>, and whether the email is on All Registrants and whether the email and the contact phone are on SMS Verified. Say the phone in E.164.</li>
+    <li>The reminder switch and the confirmation switch: on, or blocked, and <code>blocked_by</code> (<code>global</code> or <code>webinar</code>). If both are off, say the hub is not writing a sheet row while they are off.</li>
+    <li>ActiveCampaign: whether the main tag is on the contact, the contact id, the association time (not the tag’s own created time), and whether that time is this registration or an older one. Whether the <code>(Email)</code> twin is on the contact. If the join-link field points at a different webinar id, name that id and when it was written.</li>
+    <li>Close: the lead URL, the <code>01. New Activity</code> time, Funnel?, Lead Type, and the owner name. If that activity was created for a different email on the same lead, say so and name the other email. Mention a second same-day activity when its Funnel? date is a different webinar.</li>
+    <li>Zoom: whether a registrant row or sheet <code>join_url</code> exists for this webinar id. If the check did not scan every Zoom registrant, say that Zoom’s list does not filter by email and give the registrant count, instead of claiming the person is absent from Zoom.</li>
+  </ol>
+  <p>This is the Notes body the Nov 4 check should have produced for <code>hailey@newreach.com</code> on Creative Finance Training with Pace Morby. Match this shape on every run:</p>
+  <pre><code>Test lead intake · Nov 4, 2026, 4:05 PM · &lt;session email&gt;
+
+Reminder texts still read the SMS Verified tab of
+https://docs.google.com/spreadsheets/d/16pn1wabazyoSZz0gozs6ybWV7Y-ddVo_mhdAjlD6Fdc/edit
+hailey@newreach.com and +1 210-309-8192 are not on SMS Verified.
+The email is not on All Registrants.
+Reminder texts are blocked globally. The confirmation text is blocked for this webinar.
+The registration hub is not writing a sheet row while those switches are off.
+
+ActiveCampaign: the main tag "11/04/2026 Subto Creative Finance Live Registrant" is on contact 868383. It was applied October 30, not by a registration today. The (Email) twin is not on the contact. The Zoom join link stored on the contact is for webinar 82176840033, last written October 30, not this webinar (85977280124).
+
+Close: 01. New Activity on https://app.close.com/lead/lead_Je9eQLQ9X1xpiErsvciIcgvni6GuQer9Lw5onk3B8En/ at 2:42 PM Arizona. Funnel? is "Live Webinar - 11/04/2026", Lead Type is Webinar, DOE owner is Travis Lewis. That activity was written for melissa@newreach.com, another address on the same contact. It is not this email's registration. A second activity on that lead, about 30 minutes later, is for November 13.
+
+Zoom: no row on the registrant sheet the SMS workflow uses, and not among the newest Zoom registrants. Zoom's list does not filter by email and this webinar has 3,085 registrants, so the full list was not paged. Nothing on the ActiveCampaign contact is a join link for 85977280124.</code></pre>
+  <div class="warn">
+    <p>Because that activity belongs to <code>melissa@newreach.com</code>, leave Funnel? and Lead Owner blank and keep the explanation in Notes. Still fill Close Account with the lead URL, because the email is on that lead. Still fill Active Campaign Account and Webinar Tag (Main). Leave Webinar Tag (Email), Zoom Join URL, and SMS Reminders empty, and say why in Notes.</p>
+  </div>
+
+  <h2 id="sheet">Registry and the sheet</h2>
+  <p>Look up <code>martech.scheduled_events</code> by <code>webinar_id</code> equal to this event’s <code>zoomWebinarId</code>. If that misses, look up <code>martech.pulse_event_map</code> by <code>pulse_event_id</code> and then the registry row. Read <code>spreadsheet_url</code>, <code>ac_tag</code>, <code>sms_confirm</code>, and the reminder slot <code>324a</code> uses (<code>sms1</code> by default). Put the reminder body in SMS Reminders only when this email’s phone is on SMS Verified. If the body exists but the phone is not on that tab, leave SMS Reminders blank and put the body, the sheet URL, and the miss in Notes.</p>
+  <p>If Pulse’s own <code>reminderSmsCopy</code> (<code>nrPulse.getSmsCopy</code>) differs from the registry body, still use the registry body and say the SMS copy tab differs.</p>
+  <p>Look up the sheet by the <code>email</code> column and the <code>phone</code> column. Try the phone as stored and as E.164. Search the whole column. An empty lookup is a miss, not an error.</p>
+
+  <h2 id="zoom">Zoom</h2>
+  <p>Extract the mailbox from <code>zoomAccount</code>. The sample value is <code>Support@subto.com - Webinars (Unlimited)</code>. The email is the part before <code> - </code>. Zoom <code>GET /webinars/{id}/registrants</code> ignores an <code>email</code> query and returns the newest page only. Do not page thousands of registrants from Pulse.</p>
+  <p>Decide the join URL in this order:</p>
+  <ol>
+    <li><code>join_url</code> on the All Registrants or SMS Verified row for this email.</li>
+    <li><code>join_link</code> on <code>martech.webinar_registrants</code> for this webinar id plus email.</li>
+    <li>The brand’s ActiveCampaign join-link field, only when the URL contains this webinar id (Subto field <code>41</code>).</li>
+  </ol>
+  <p>Put that URL in Zoom Join URL. Do not copy the event’s <code>zoomLink</code> or the registry <code>join_url</code> into the field. Either of those existing does not mean this lead received one. If none of the three match, leave the field blank and use the Zoom paragraph in Notes.</p>
+
+  <h2 id="ac">ActiveCampaign</h2>
+  <p>Use the brand account map already used by the webinar form work:</p>
+  <ul>
+    <li>subto → <a href="https://subto1304.activehosted.com">subto1304.activehosted.com</a></li>
+    <li>gator → <a href="https://pacemorby.activehosted.com">pacemorby.activehosted.com</a></li>
+    <li>zdb (also zero down) → <a href="https://zerodownbusinesses.activehosted.com">zerodownbusinesses.activehosted.com</a></li>
+    <li>tc / tttc / toptier → <a href="https://toptiertc.activehosted.com">toptiertc.activehosted.com</a></li>
+  </ul>
+  <p>Find the contact by the submitted email. Active Campaign Account becomes <code>{admin}/app/contacts/{id}</code>. Unknown brand, or no contact: leave the link and both tag fields blank and note it.</p>
+  <p>Tags come from the tags on that contact, ordered by the contact-tag association time (<code>contactTag.cdate</code>), not the tag’s own created date. Always write that association time into Notes. A tag applied on an earlier day is not evidence of the registration being tested.</p>
+  <ul>
+    <li>A tag whose name ends with <code>(Email)</code>, ignoring case, is an email twin. The main tag is the same name without that suffix.</li>
+    <li>If both are on the contact, they are a pair. Prefer the pair whose main tag equals the registry <code>ac_tag</code>. Otherwise use the pair with the latest association time.</li>
+    <li>Webinar Tag (Main) is the tag that does not contain the word email. Webinar Tag (Email) is the twin.</li>
+    <li>If only one side is present, fill that side and say the twin is missing.</li>
+    <li>If no <code>(Email)</code> pair exists, put the most recent tag whose name does not contain “email” in Main, and the most recent tag whose name contains “email” in Email, and say they were not a matched pair.</li>
+    <li>If the main tag does not equal the registry <code>ac_tag</code>, still show the contact’s tags, and name the registry tag that was expected.</li>
+    <li>Read the join-link field (Subto field <code>41</code>). If its URL’s webinar id is not this event’s <code>zoomWebinarId</code>, do not use it as Zoom Join URL. Notes names the other id and the field’s <code>udate</code>.</li>
+  </ul>
+
+  <h2 id="close">Close</h2>
+  <p>Read only. <code>01. New Activity</code> is a live edge between acquisition and onboarding. Do not create a lead, a contact, or an activity when something is missing.</p>
+  <p>Pick the Close org from the Pulse brand: Subto, Gator, Zero Down, Top Tier, Deal Scout, Owners Club. An unmapped brand skips Close and is noted.</p>
+  <p>Search leads by the email. The email match includes secondary addresses. One lead: Close Account is <code>https://app.close.com/lead/{id}</code>. More than one lead: leave every Close field blank and list the lead names and URLs in Notes. Do not pick one.</p>
+  <div class="callout">
+    <p>A single lead often carries more than one email. On Nov 4, <code>hailey@newreach.com</code> and <code>melissa@newreach.com</code> were both on <code>lead_Je9eQLQ9X1xpiErsvciIcgvni6GuQer9Lw5onk3B8En</code>, and the <code>01. New Activity</code> whose Funnel? is <code>Live Webinar - 11/04/2026</code> (<code>acti_OY06p0HsJGvMbZGfWstPCACGYshefYglUpPsZjaaz3w</code>, 21:42 UTC) was written by <code>323a</code> for Melissa. Filling Funnel? from the newest activity on “the lead that has this email” attributes someone else’s registration to the person being tested.</p>
+  </div>
+  <p>Attribute an activity to the submitted email only when one of these is true:</p>
+  <ul>
+    <li>The activity’s contact email is the submitted email.</li>
+    <li><code>martech.webinar_registrants</code> for this webinar id plus the submitted email points at that lead.</li>
+    <li>The hub execution that created the activity (<code>323a</code> nodes <code>custom_activity</code> and <code>close_upsert</code>) used the submitted email.</li>
+  </ul>
+  <p>If the only dated activity belongs to a different email on the lead, leave Funnel? and Lead Owner blank and explain it in Notes, including the other email, the Funnel? value, the owner name, and the time. If a later activity on that lead has a different webinar date in Funnel?, mention it in the same paragraph.</p>
+  <p>When the activity does belong to the submitted email, resolve the activity type by the name <code>01. New Activity</code>, not by a hardcoded id. Subto’s id is <code>actitype_3zDCJQVenaykzZkiNoqRxX</code>. ZDB is <code>actitype_5Ukg39kSYPBbhD3DVEWvfU</code>. Gator is <code>actitype_3xN0iJBb3xkhTV8O8B9rR9</code>. TC is <code>actitype_6cu3rpWBkfkg53opkFYOyu</code>. Confirm Deal Scout and Owners Club by name at build time.</p>
+  <ul>
+    <li>Funnel? is the text field labeled <code>Funnel?</code>. On Subto that is <code>cf_tNpr872KqcwMcbJUkLC4u0meKOrOERdz9FH4ND6RHXS</code>. There is a separate choices field labeled <code>Funnel</code>. Do not read that one.</li>
+    <li>There is no activity field named Lead Owner. The activity has DOE Lead Owner and SDR Lead Owner. Show whichever is set, as a person’s name. If both are set, show <span class="mono">DOE: Name · SDR: Name</span>. If neither is set, leave Lead Owner blank and note it. Do not substitute the lead-level Lead Owner field. Subto’s ids are DOE <code>cf_nIut3H4y4nWtyJgWjyeD2afq1Bh9d2cYWkTeEwwRJ4i</code> and SDR <code>cf_Ej8tOTQDhizLwIt6JIK3ORhMBehRzJPikBjVNJoi1PM</code>.</li>
+    <li>Initial Lead Type and Last Lead Type are the lead custom fields with those labels. On Subto, Initial Lead Type is <code>cf_kmEAV7MvpAXaMW5OAWGsQ1mtaTWKmvcawywUt5oQVDW</code> (choices) and Last Lead Type is <code>cf_1joFQnAlqgkvJLiJ3TJCfZ1gddTDKugCYjlKx5yKQeA</code> (text). Do not read the choices field labeled only Lead Type.</li>
+    <li>Initial Lead Source and Last Lead Source are not the labels in Subto. The lead fields are Initial Source (<code>cf_KJDW1ZRdSQshmXMHyzuEuJd2jaJCVlEmqmQ6usWxPZX</code>) and Last Source (<code>cf_VrHILoWZPIVbFGcnI6dX5XtrH7DXKQW9WxLRQjo3qj7</code>). Look up the “Lead Source” label first, then Source. Resolve user-type values to names.</li>
+  </ul>
+  <p>No activity on the lead: leave Funnel? and Lead Owner blank and note “01. New Activity not on this lead”. Still fill the four lead custom fields when the lead itself is this email’s.</p>
+
+  <h2 id="test">What to test</h2>
+  <p><a href="https://finance.newreach.com/nr-pulse?open=e54baa99-2bb2-4ba6-8d02-4c0d3b7918f5">SubTo Live Webinar with Jesus Salmon</a>. <code>mechanismCode</code> <code>live</code>, brand SubTo (<code>d77aa588-59da-4697-94ad-2c5af6bcc878</code>), Zoom account <code>Support@subto.com - Webinars (Unlimited)</code>, webinar id <code>82326946178</code>. <code>acTag</code> is null and <code>n8nSyncStatus</code> is <code>pending</code>. History already has “Zoom link added by n8n” at <code>2026-10-08 16:56:16</code> with a null email (change id 371), and “Event created” by <code>suravis@subto.com</code>.</p>
+  <p>After the tab ships, that event should show Created Zoom Webinar checked, stamped from change 371 and attributed to n8n, and Active Campaign Tag(s) unchecked. The other seven are unchecked.</p>
+  <p>Test Lead Intake against a real registrant email for this webinar should fill the fields and leave a single History row whose <code>newValue</code> is the Notes text. An email that is in none of the systems should leave the result fields blank and still write the six Notes blocks, each one saying what was missing. Neither run should create a Close activity, an ActiveCampaign contact, a Zoom registrant, or a sheet row.</p>
+  <p>Second case: Creative Finance Training with Pace Morby, webinar <code>85977280124</code>, email <code>hailey@newreach.com</code>. Notes must match the block above. Close Account is the Test Test lead URL. Webinar Tag (Main) is the Nov 4 tag. Funnel?, Lead Owner, Webinar Tag (Email), Zoom Join URL, and SMS Reminders stay empty.</p>
+
+  <footer>
+    <p>Public spec for the New Reach team. Source repo <a href="https://github.com/haileynre/pulse-backend-tab">haileynre/pulse-backend-tab</a>.</p>
+  </footer>
+</main>
+</body>
+</html>
