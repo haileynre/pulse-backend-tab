@@ -126,7 +126,7 @@
   <ol>
     <li>Close: the lead has an <code>01. New Activity</code>. The <code>Funnel?</code> field must read <code>Live Webinar - MM/DD/YYYY</code>. That date must match the date on the landing page and the date of the webinar in Pulse.</li>
     <li>ActiveCampaign: the date on the tag must match the landing-page date, the Pulse webinar date, and the date in <code>Funnel?</code>.</li>
-    <li>Zoom: the test lead is registered on the webinar.</li>
+    <li>Zoom: the test lead is registered on the webinar. Zoom Join URL is that registrant’s personal join link, the one Zoom issues for that email. It is not the shared webinar link on the Pulse card.</li>
     <li>SMS: the lead is on the SMS reminders list. That list is the <code>SMS Verified</code> tab of the webinar’s sheet.</li>
   </ol>
   <h3>Guest Host Live Webinar</h3>
@@ -176,7 +176,7 @@
     <li>Initial Lead Source, and Last Lead Source.</li>
     <li>Active Campaign Account, full width, link affordance when it is a URL.</li>
     <li>Webinar Tag (Main), and Webinar Tag (Email).</li>
-    <li>Member Communications: Zoom Join URL, and SMS Reminders. SMS Reminders is the reminder body only when this phone is on the SMS Verified tab. Otherwise it stays empty and Notes explains the sheet.</li>
+    <li>Member Communications: Zoom Join URL, and SMS Reminders. Zoom Join URL is the personal join link Zoom gave this registrant. SMS Reminders is the reminder body only when this phone is on the SMS Verified tab. Otherwise it stays empty and Notes explains the sheet.</li>
     <li>Notes, full width. This is the diagnosis. The required wording is in <a href="#notes">Notes</a>.</li>
   </ul>
   <p>These inputs stay editable after a lookup so someone can correct a value. Hand edits use the dialog’s existing dirty/save path. Each hand-edited field writes one History row the same way other event fields already do.</p>
@@ -252,13 +252,14 @@ Zoom: no row on the registrant sheet the SMS workflow uses, and not among the ne
   <h2 id="zoom">Zoom</h2>
   <p>Extract the mailbox from <code>zoomAccount</code>. The sample value is <code>Support@subto.com - Webinars (Unlimited)</code>. The email is the part before <code> - </code>. Live, Replay, and Ask Me Anything webinars are created under <code>support@subto.com</code>. Guest Host Live Webinar uses <code>pace@subto.com</code> for Subto and <code>support@gatormethod.com</code> for Gator. Notes names the account that was searched. Zoom <code>GET /webinars/{id}/registrants</code> ignores an <code>email</code> query and returns the newest page only. Do not page thousands of registrants from Pulse.</p>
   <p>A pass on Zoom means the test email is a registrant. A pass on Close means <code>Funnel?</code> is <code>Live Webinar - MM/DD/YYYY</code> and that date matches the Pulse webinar date and the landing-page date. A pass on ActiveCampaign means the date in the tag matches those same three dates.</p>
-  <p>Decide the join URL in this order:</p>
+  <p>Zoom Join URL is the personal link Zoom creates for that registrant. On the registrant record it is <code>join_url</code>, the long link with that person’s token. It is not the webinar’s shared join link, not the Pulse card’s <code>zoomLink</code>, and not <code>scheduled_events.join_url</code>.</p>
+  <p>Read it from the Zoom registrant for this email. If Zoom’s list cannot be filtered, use a stored copy of that same personal link, in this order, and only when the URL is the registrant link for this webinar id:</p>
   <ol>
     <li><code>join_url</code> on the All Registrants or SMS Verified row for this email.</li>
     <li><code>join_link</code> on <code>martech.webinar_registrants</code> for this webinar id plus email.</li>
     <li>The brand’s ActiveCampaign join-link field, only when the URL contains this webinar id (Subto field <code>41</code>).</li>
   </ol>
-  <p>Put that URL in Zoom Join URL. Do not copy the event’s <code>zoomLink</code> or the registry <code>join_url</code> into the field. Either of those existing does not mean this lead received one. If none of the three match, leave the field blank and use the Zoom paragraph in Notes.</p>
+  <p>If the only link available is the shared webinar link, leave Zoom Join URL blank and say so in Notes. A shared link does not prove this lead was registered.</p>
 
   <h2 id="ac">ActiveCampaign</h2>
   <p>Use the brand account map already used by the webinar form work:</p>
